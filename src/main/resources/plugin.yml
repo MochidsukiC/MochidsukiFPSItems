@@ -1,0 +1,4 @@
+name: MochidsukiFPSItems
+version: '${project.version}'
+main: jp.houlab.mochidsuki.mochidsukifpsitems.Main
+api-version: '1.20'
