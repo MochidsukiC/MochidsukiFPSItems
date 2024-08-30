@@ -24,7 +24,7 @@ public final class Main extends JavaPlugin {
         // Plugin startup logic
         plugin = this;
 
-
+        getServer().getPluginManager().registerEvents(new Listener(),this);
 
         //ProtocolLib
         protocolManager = ProtocolLibrary.getProtocolManager();
