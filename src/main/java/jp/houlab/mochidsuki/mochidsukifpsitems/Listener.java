@@ -26,6 +26,7 @@ import static jp.houlab.mochidsuki.mochidsukifpsitems.Main.plugin;
 
 /**
  * リスナークラス
+ * @author Mochidski
  */
 public class Listener implements org.bukkit.event.Listener {
     /**

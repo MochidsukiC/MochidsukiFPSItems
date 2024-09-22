@@ -13,6 +13,7 @@ import static jp.houlab.mochidsuki.mochidsukifpsitems.Main.plugin;
 
 /**
  * 毎ティック実行されるクラス
+ * @author Mochidsuki
  */
 public class EveryTicks extends BukkitRunnable {
 

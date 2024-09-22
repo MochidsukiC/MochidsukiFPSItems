@@ -7,6 +7,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * 飛来物が永久に演算され、サーバーに負荷をかけるのを抑止するクラス
+ * @author Mochidsuki
  */
 public class DistanceKiller extends BukkitRunnable {
     Entity entity;
