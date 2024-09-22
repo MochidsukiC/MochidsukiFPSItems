@@ -11,12 +11,18 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import static jp.houlab.mochidsuki.mochidsukifpsitems.Main.plugin;
 
+/**
+ * 毎ティック実行されるクラス
+ */
 public class EveryTicks extends BukkitRunnable {
 
+    /**
+     * 実行
+     */
     @Override
     public void run() {
         for(Entity entity : V.Owner.keySet()){
-            if(entity.getType().equals(EntityType.CREEPER)){
+            if(entity.getType().equals(EntityType.CREEPER)){//クリーパーズトラップ
                 Creeper creeper = (Creeper) entity;
                 for(Player player : plugin.getServer().getOnlinePlayers()) {
                     if(player.getGameMode().equals(GameMode.ADVENTURE) && player.getGameMode().equals(GameMode.SURVIVAL) && creeper.getLocation().distanceSquared(player.getLocation()) < 6 && !player.getScoreboard().getEntityTeam(player).getEntries().contains(entity.getScoreboardEntryName())) {

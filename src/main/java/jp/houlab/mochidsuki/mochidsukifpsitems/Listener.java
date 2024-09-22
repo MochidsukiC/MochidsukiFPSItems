@@ -24,7 +24,14 @@ import java.util.Objects;
 import static jp.houlab.mochidsuki.mochidsukifpsitems.Main.config;
 import static jp.houlab.mochidsuki.mochidsukifpsitems.Main.plugin;
 
+/**
+ * リスナークラス
+ */
 public class Listener implements org.bukkit.event.Listener {
+    /**
+     * アイテム使用を検知
+     * @param event イベント
+     */
     @EventHandler
     public void PlayerInteractEvent(PlayerInteractEvent event){
         switch (Objects.requireNonNull(event.getMaterial())) {
@@ -44,7 +51,7 @@ public class Listener implements org.bukkit.event.Listener {
                 }
                 break;
             }
-            case CREEPER_SPAWN_EGG: {
+            case CREEPER_SPAWN_EGG: {//クリーパーズトラップ
                 Player player = event.getPlayer();
                 if(event.getPlayer().getCooldown(Material.CREEPER_SPAWN_EGG) <= 0) {
                     if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
@@ -65,6 +72,10 @@ public class Listener implements org.bukkit.event.Listener {
         }
     }
 
+    /**
+     * 雪玉発射時にポーション効果をバックアップする
+     * @param event イベント
+     */
     @EventHandler
     public void ProjectileLaunchEvent(ProjectileLaunchEvent event){
         switch (Objects.requireNonNull(event.getEntity().getType())) {
@@ -81,6 +92,10 @@ public class Listener implements org.bukkit.event.Listener {
         }
     }
 
+    /**
+     * スナイパーを発射する
+     * @param event イベント
+     */
     @EventHandler
     public void PlayerToggleSneakEvent(PlayerToggleSneakEvent event){
         //スナイパートグル
@@ -109,6 +124,10 @@ public class Listener implements org.bukkit.event.Listener {
         }
     }
 
+    /**
+     *上位金リンゴの効果時間を短縮する
+     * @param event イベント
+     */
     @EventHandler
     public void PlayerItemConsumeEvent(PlayerItemConsumeEvent event){
         //金リンゴ弱体化
@@ -119,10 +138,10 @@ public class Listener implements org.bukkit.event.Listener {
                 event.getPlayer().removePotionEffect(PotionEffectType.ABSORPTION);
                 event.getPlayer().removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
                 event.getPlayer().removePotionEffect(PotionEffectType.FIRE_RESISTANCE);
-                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,1200,1));
-                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION,1200,3));
-                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,1200,0));
-                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE,1200,0));
+                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,600,1));
+                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION,600,3));
+                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,600,0));
+                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE,600,0));
             });
         }
         if(event.getItem().getType().equals(Material.MILK_BUCKET)&&event.getPlayer().hasPotionEffect(PotionEffectType.LUCK)){
@@ -130,6 +149,10 @@ public class Listener implements org.bukkit.event.Listener {
         }
     }
 
+    /**
+     * スナイパーを持った処理
+     * @param event
+     */
     @EventHandler
     public void PlayerItemHeldEvent(PlayerItemHeldEvent event){
         if(event.getPlayer().getInventory().getItem(event.getNewSlot()) != null &&event.getPlayer().getInventory().getItem(event.getNewSlot()).getType().equals(Material.SPYGLASS)){
@@ -138,6 +161,10 @@ public class Listener implements org.bukkit.event.Listener {
         V.useSniper.remove(event.getPlayer());
     }
 
+    /**
+     * 雪玉の着弾処理
+     * @param event
+     */
     @EventHandler
     public void ProjectileHitEvent(ProjectileHitEvent event){
         if(event.getEntity().getType() == EntityType.SNOWBALL){
@@ -148,6 +175,10 @@ public class Listener implements org.bukkit.event.Listener {
         }
     }
 
+    /**
+     * クリーパーズトラップ爆発処理
+     * @param event
+     */
     @EventHandler
     public void EntityExplodeEvent(EntityExplodeEvent event){
         if(event.getEntity().getType() == EntityType.CREEPER){

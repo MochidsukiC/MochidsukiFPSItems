@@ -23,12 +23,18 @@ import org.bukkit.potion.PotionType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
+/**
+ * メインクラス
+ */
 public final class Main extends JavaPlugin {
     public static Plugin plugin;
     public static FileConfiguration config;
 
     private ProtocolManager protocolManager;
+
+    /**
+     * 起動時の初期化処理
+     */
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -57,6 +63,9 @@ public final class Main extends JavaPlugin {
 
     }
 
+    /**
+     * 終了
+     */
     @Override
     public void onDisable() {
         // Plugin shutdown logic
