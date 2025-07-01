@@ -39,15 +39,16 @@ public class Listener implements org.bukkit.event.Listener {
             case FIRE_CHARGE: {//ファイアーボール発射
                 if((event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK) && event.getPlayer().getCooldown(Material.FIRE_CHARGE) <= 0) {
                     Fireball fireball = event.getPlayer().getWorld().spawn(event.getPlayer().getEyeLocation(), Fireball.class);
-                    //fireball.setShooter(event.getPlayer());
+                    fireball.setShooter(event.getPlayer());
                     fireball.setVelocity(event.getPlayer().getLocation().getDirection().normalize().multiply(1.5));
                     event.getPlayer().getInventory().getItemInMainHand().setAmount(event.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
 
                     event.getPlayer().setCooldown(Material.FIRE_CHARGE, 10);
                 }
+                break;
             }
             case SPYGLASS: {//望遠鏡をのぞいたイベント
-                if(event.getPlayer().getCooldown(Material.SPLASH_POTION) <= 0) {
+                if((event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) && event.getPlayer().getCooldown(Material.SPYGLASS) <= 0) {
                     Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> V.useSniper.add(event.getPlayer()), 5L);
                 }
                 break;
@@ -69,6 +70,7 @@ public class Listener implements org.bukkit.event.Listener {
                         player.setCooldown(Material.CREEPER_SPAWN_EGG, 40);
                     }
                 }
+                break;
             }
         }
     }
@@ -83,10 +85,24 @@ public class Listener implements org.bukkit.event.Listener {
             case SNOWBALL: {
                 if (event.getEntity().getShooter() instanceof Player) {
                     Player player = (Player) event.getEntity().getShooter();
-                    if (player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")) != null && player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getType() == Material.SPLASH_POTION) {
-                        PotionMeta meta = (PotionMeta) player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getItemMeta();
-                        V.SnowBallEffect.put(event.getEntity(), meta.getBasePotionType());
-                        player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).setAmount(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getAmount() - 1);
+                    if (player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")) != null) {
+
+                        switch (player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getType()) {
+                            case SPLASH_POTION: {
+                                PotionMeta meta = (PotionMeta) player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getItemMeta();
+                                V.SnowBallEffect.put(event.getEntity(), meta.getBasePotionType());
+                                player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).setAmount(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getAmount() - 1);
+                                break;
+                            }
+                            case SPECTRAL_ARROW:{
+                                event.getEntity().addScoreboardTag("ScanBall");
+                                player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).setAmount(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getAmount() - 1);
+                                break;
+                            }
+                            default:
+                                System.out.println(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getType());
+                                break;
+                        }
                     }
                 }
             }
@@ -169,9 +185,26 @@ public class Listener implements org.bukkit.event.Listener {
     @EventHandler
     public void ProjectileHitEvent(ProjectileHitEvent event){
         if(event.getEntity().getType() == EntityType.SNOWBALL){
+            Snowball snowball = (Snowball) event.getEntity();
             if(V.SnowBallEffect.containsKey(event.getEntity())){
                 AreaEffectCloud effectCloud = event.getEntity().getLocation().getWorld().spawn(event.getEntity().getLocation(), AreaEffectCloud.class);
                 effectCloud.setBasePotionType(V.SnowBallEffect.get(event.getEntity()));
+            }else if (event.getEntity().getScoreboardTags().contains("ScanBall")){
+                if(event.getEntity().getShooter() instanceof Player) {
+                    Player thrower = (Player) event.getEntity().getShooter();
+                    int numberOfPeople = 0;
+                    for (Player player : plugin.getServer().getOnlinePlayers()) {
+                        if (!player.getName().equals(thrower.getName()) && ( thrower.getScoreboard().getEntityTeam(thrower) == null || (thrower.getScoreboard().getEntityTeam(thrower) != null && !thrower.getScoreboard().getEntityTeam(thrower).getEntries().contains(player.getScoreboardEntryName())) ) && snowball.getLocation().distance(player.getLocation()) < 15 && (player.getGameMode().equals(GameMode.SURVIVAL)||player.getGameMode().equals(GameMode.ADVENTURE))){
+                            numberOfPeople++;
+                            player.sendMessage("検知された!");
+                            player.playSound(player,Sound.BLOCK_SCULK_SENSOR_CLICKING,1,1);
+                        }
+                    }
+                    thrower.sendMessage("敵を"+numberOfPeople+"人検知");
+                    thrower.playSound(thrower,Sound.BLOCK_NOTE_BLOCK_BIT,0.7f,0.5946f+(float) numberOfPeople/20f);
+                    thrower.playSound(thrower,Sound.BLOCK_NOTE_BLOCK_BIT,0.7f,0.1f+(float)numberOfPeople/20f);
+                }
+
             }
         }
     }

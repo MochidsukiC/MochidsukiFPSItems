@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MochidsukiFPSItems.iml" filepath="$PROJECT_DIR$/MochidsukiFPSItems.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/MochidsukiFPSItems.iml" filepath="$PROJECT_DIR$/.idea/MochidsukiFPSItems.iml" />
     </modules>
   </component>
 </project>

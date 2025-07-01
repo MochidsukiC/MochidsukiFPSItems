@@ -22,6 +22,7 @@ import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 /**
  * メインクラス
@@ -73,7 +74,7 @@ public final class Main extends JavaPlugin {
 }
 
 class V{
-    static public List<Player> useSniper = new ArrayList<Player>();//スナイパーを使用中か否か
+    static public HashSet<Player> useSniper = new HashSet<>();//スナイパーを使用中か否か
 
     static public HashMap<Projectile, PotionType> SnowBallEffect = new HashMap<>();
 
