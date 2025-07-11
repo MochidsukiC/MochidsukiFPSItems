@@ -26,10 +26,10 @@ public class EveryTicks extends BukkitRunnable {
             if(entity.getType().equals(EntityType.CREEPER)){//クリーパーズトラップ
                 Creeper creeper = (Creeper) entity;
                 for(Player player : plugin.getServer().getOnlinePlayers()) {
-                    if(player.getGameMode().equals(GameMode.ADVENTURE) && player.getGameMode().equals(GameMode.SURVIVAL) && creeper.getLocation().distanceSquared(player.getLocation()) < 6 && !player.getScoreboard().getEntityTeam(player).getEntries().contains(entity.getScoreboardEntryName())) {
+                    if((player.getGameMode().equals(GameMode.ADVENTURE) || player.getGameMode().equals(GameMode.SURVIVAL)) && creeper.getLocation().distance(player.getLocation()) < 3 && (player.getScoreboard().getEntityTeam(player) == null ||  !player.getScoreboard().getEntityTeam(player).getEntries().contains(entity.getScoreboardEntryName()))) {
                         V.Owner.get(creeper).sendMessage("トラップ発動!!");
                         creeper.removePotionEffect(PotionEffectType.SLOW);
-                        creeper.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 1200, 5, true, true));
+                        creeper.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 100, 4, true, true));
 
                         V.Owner.remove(entity);
                     }

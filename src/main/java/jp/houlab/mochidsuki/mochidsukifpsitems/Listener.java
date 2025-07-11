@@ -2,6 +2,7 @@ package jp.houlab.mochidsuki.mochidsukifpsitems;
 
 import com.destroystokyo.paper.event.entity.CreeperIgniteEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -9,10 +10,17 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
@@ -35,6 +43,7 @@ public class Listener implements org.bukkit.event.Listener {
      */
     @EventHandler
     public void PlayerInteractEvent(PlayerInteractEvent event){
+        Player player = event.getPlayer();
         switch (Objects.requireNonNull(event.getMaterial())) {
             case FIRE_CHARGE: {//ファイアーボール発射
                 if((event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK) && event.getPlayer().getCooldown(Material.FIRE_CHARGE) <= 0) {
@@ -48,13 +57,12 @@ public class Listener implements org.bukkit.event.Listener {
                 break;
             }
             case SPYGLASS: {//望遠鏡をのぞいたイベント
-                if((event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) && event.getPlayer().getCooldown(Material.SPYGLASS) <= 0) {
+                if((event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) && event.getPlayer().getCooldown(Material.SPYGLASS) <= 0 && event.getPlayer().getOpenInventory().getType() == InventoryType.CRAFTING) {
                     Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> V.useSniper.add(event.getPlayer()), 5L);
                 }
                 break;
             }
             case CREEPER_SPAWN_EGG: {//クリーパーズトラップ
-                Player player = event.getPlayer();
                 if(event.getPlayer().getCooldown(Material.CREEPER_SPAWN_EGG) <= 0) {
                     if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                         event.setCancelled(true);
@@ -71,6 +79,27 @@ public class Listener implements org.bukkit.event.Listener {
                     }
                 }
                 break;
+            }
+
+            case END_PORTAL_FRAME:{
+                if((event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR)) {
+                    if(!player.isSneaking()){
+                        player.openAnvil(null,true).setTitle("モバイルアンビル");
+
+                        player.getWorld().playSound(player.getLocation(),Sound.BLOCK_ANVIL_PLACE,0.4f,0.5f);
+                        player.getWorld().playSound(player.getLocation(),Sound.BLOCK_FIRE_AMBIENT,1,2);
+
+                    }else {
+                        InventoryView smithingInventory = player.openSmithingTable(null,true);
+                        smithingInventory.setTitle("モバイルスミッシングテーブル");
+                        ItemStack itemStack = new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE);
+                        smithingInventory.getTopInventory().setItem(0,itemStack);
+
+                        player.getWorld().playSound(player.getLocation(),Sound.BLOCK_IRON_TRAPDOOR_OPEN,1,0);
+                        player.getWorld().playSound(player.getLocation(),Sound.ITEM_FLINTANDSTEEL_USE,1,0.6f);
+                    }
+                }
+                    break;
             }
         }
     }
@@ -215,14 +244,26 @@ public class Listener implements org.bukkit.event.Listener {
      */
     @EventHandler
     public void EntityExplodeEvent(EntityExplodeEvent event){
-        if(event.getEntity().getType() == EntityType.CREEPER){
-            event.setCancelled(true);
-            Creeper creeper = (Creeper)event.getEntity();
-            creeper.removePotionEffect(PotionEffectType.SPEED);
-            creeper.removePotionEffect(PotionEffectType.SLOW);
-            event.getLocation().getWorld().createExplosion(event.getLocation(),2F,false);
-            event.getLocation().getWorld().spawnParticle(Particle.EXPLOSION_HUGE,event.getLocation(),10);
-            event.getEntity().remove();
+        switch (event.getEntityType()){
+            case CREEPER:{
+                event.setCancelled(true);
+                Creeper creeper = (Creeper)event.getEntity();
+                creeper.removePotionEffect(PotionEffectType.SPEED);
+                creeper.removePotionEffect(PotionEffectType.SLOW);
+                event.getLocation().getWorld().createExplosion(event.getLocation(),0F,false);
+                event.getLocation().getWorld().spawnParticle(Particle.EXPLOSION_HUGE,event.getLocation(),10);
+                event.getEntity().remove();
+                break;
+            }
         }
     }
+
+    @EventHandler
+    public void InventoryCloseEvent(InventoryCloseEvent event){
+
+        if(event.getView().getTitle().equals("モバイルスミッシングテーブル")){
+            event.getInventory().getItem(0).setAmount(event.getInventory().getItem(0).getAmount() - 1);
+        }
+    }
+
 }
