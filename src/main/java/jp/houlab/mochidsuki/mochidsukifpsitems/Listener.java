@@ -172,10 +172,12 @@ public class Listener implements org.bukkit.event.Listener {
      */
     @EventHandler
     public void PlayerItemHeldEvent(PlayerItemHeldEvent event){
-        if(event.getPlayer().getInventory().getItem(event.getNewSlot()) != null &&event.getPlayer().getInventory().getItem(event.getNewSlot()).getType().equals(Material.SPYGLASS)){
-            event.getPlayer().setCooldown(Material.SPYGLASS, 50);
+        if(!event.isCancelled()) {
+            if (event.getPlayer().getInventory().getItem(event.getNewSlot()) != null && event.getPlayer().getInventory().getItem(event.getNewSlot()).getType().equals(Material.SPYGLASS)) {
+                event.getPlayer().setCooldown(Material.SPYGLASS, 50);
+            }
+            V.useSniper.remove(event.getPlayer());
         }
-        V.useSniper.remove(event.getPlayer());
     }
 
     /**
