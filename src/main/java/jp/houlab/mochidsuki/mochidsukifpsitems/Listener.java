@@ -2,7 +2,9 @@ package jp.houlab.mochidsuki.mochidsukifpsitems;
 
 import com.destroystokyo.paper.event.entity.CreeperIgniteEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -26,7 +28,13 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
+import org.checkerframework.checker.units.qual.C;
+import org.checkerframework.checker.units.qual.N;
 
+import java.time.Duration;
 import java.util.Objects;
 
 import static jp.houlab.mochidsuki.mochidsukifpsitems.Main.config;
@@ -67,13 +75,17 @@ public class Listener implements org.bukkit.event.Listener {
                     if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                         event.setCancelled(true);
                         Creeper creeper = player.getWorld().spawn(event.getInteractionPoint(), Creeper.class);
-                        V.Owner.put(creeper, player);
+                        V.addOwner(player,creeper);
                         creeper.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 9999999, 10, true, true));
                         if(player.getScoreboard().getPlayerTeam(player) != null) {
                             creeper.customName(Component.text(player.getScoreboard().getPlayerTeam(player).getColor().name()));
+                            player.getScoreboard().getEntityTeam(player).addEntity(creeper);
                         }
-                        player.getScoreboard().getEntityTeam(player).addEntity(creeper);
                         event.getItem().setAmount(event.getItem().getAmount() - 1);
+
+                        if(V.getOwnerEntities(player).size() >= 7) {
+                            V.removeEntity(V.getOwnerEntities(player).get(0));
+                        }
 
                         player.setCooldown(Material.CREEPER_SPAWN_EGG, 40);
                     }
@@ -100,6 +112,21 @@ public class Listener implements org.bukkit.event.Listener {
                     }
                 }
                     break;
+            }
+            case SNOWBALL:{
+                if(event.getAction().isRightClick()){
+                    if(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")) == null || !(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getType().equals(Material.SPLASH_POTION) || player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getType().equals(Material.SPECTRAL_ARROW) || player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getType().equals(Material.CREEPER_SPAWN_EGG)) ){
+                        Title title = Title.title(Component.text(""), Component.text("スノーボールスロットがに対応アイテムが入っていません").color(NamedTextColor.RED), Title.Times.times(Duration.ZERO,Duration.ofSeconds(2),Duration.ofMillis(100)));
+                        player.showTitle(title);
+                        event.setCancelled(true);
+                        break;
+                    }
+                    if(player.getCooldown(Material.SNOWBALL) > 0) {
+                        event.setCancelled(true);
+                        break;
+                    }
+                }
+                break;
             }
         }
     }
@@ -128,8 +155,52 @@ public class Listener implements org.bukkit.event.Listener {
                                 player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).setAmount(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getAmount() - 1);
                                 break;
                             }
+                            case CREEPER_SPAWN_EGG:{
+                                player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).setAmount(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getAmount() - 1);
+                                player.setCooldown(Material.SNOWBALL,40);
+
+                                Creeper creeper = event.getLocation().getWorld().spawn(event.getLocation(), Creeper.class);
+                                creeper.addScoreboardTag("canDestroy");
+                                if(player.getScoreboard().getPlayerTeam(player) != null) {
+                                    creeper.customName(Component.text(player.getScoreboard().getPlayerTeam(player).getColor().name()));
+                                    player.getScoreboard().getEntityTeam(player).addEntity(creeper);
+                                }
+                                Snowball snowball = (Snowball) event.getEntity();
+                                new BukkitRunnable(){
+                                    int t = 0;
+                                    Location location = snowball.getLocation().clone();
+
+                                    @Override
+                                    public void run() {
+                                        RayTraceResult result = null;
+
+                                        try {
+                                            if(t>0) {
+                                                result = snowball.getWorld().rayTraceBlocks(snowball.getLocation(), location.toVector().subtract(snowball.getLocation().toVector()), 2, FluidCollisionMode.NEVER, true);
+                                            }
+                                        }catch (Exception ignored){}
+
+                                        if(snowball.getLocation().getBlock().getType().equals(Material.AIR) &&( result == null || result.getHitBlock() == null)) {
+                                            location = snowball.getLocation().clone();
+                                        }
+                                        if(snowball.isValid()) {
+                                            creeper.teleport(location);
+                                        }
+
+
+                                        if(t>70){
+                                            creeper.ignite();
+                                        }
+
+                                        t++;
+
+                                        if(creeper.isDead()){
+                                            cancel();
+                                        }
+                                    }
+                                }.runTaskTimer(plugin,0L,1L);
+                            }
                             default:
-                                System.out.println(player.getInventory().getItem(config.getInt("SNOWBALL.SLOT")).getType());
                                 break;
                         }
                     }
@@ -152,13 +223,16 @@ public class Listener implements org.bukkit.event.Listener {
                         event.getPlayer().getInventory().removeItem(new ItemStack(Material.ARROW, 1));
 
 
-                        Arrow ammo = event.getPlayer().getWorld().spawnArrow(event.getPlayer().getLocation().add(0, 1.65, 0), event.getPlayer().getLocation().getDirection(), 50, 1);
+                        Arrow ammo = event.getPlayer().getWorld().spawnArrow(event.getPlayer().getLocation().add(0, 1.65, 0), event.getPlayer().getLocation().getDirection(), 50, 0);
                         ammo.setShooter(event.getPlayer());
                         ammo.setCritical(true);
                         ammo.setColor(Color.GRAY);
                         ammo.setPierceLevel(3);
                         ammo.setDamage(0.15);
+                        ammo.addScoreboardTag("fromSniper");
                         ammo.setShooter(event.getPlayer());
+
+
                         new DistanceKiller(ammo, event.getPlayer().getLocation(), 40).runTaskTimer(plugin, 0L, 1L);
                         event.getPlayer().getWorld().playSound(event.getPlayer().getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 5, 0);
                         event.getPlayer().setCooldown(Material.SPYGLASS, 50);
@@ -225,10 +299,13 @@ public class Listener implements org.bukkit.event.Listener {
                     Player thrower = (Player) event.getEntity().getShooter();
                     int numberOfPeople = 0;
                     for (Player player : plugin.getServer().getOnlinePlayers()) {
-                        if (!player.getName().equals(thrower.getName()) && ( thrower.getScoreboard().getEntityTeam(thrower) == null || (thrower.getScoreboard().getEntityTeam(thrower) != null && !thrower.getScoreboard().getEntityTeam(thrower).getEntries().contains(player.getScoreboardEntryName())) ) && snowball.getLocation().distance(player.getLocation()) < 15 && (player.getGameMode().equals(GameMode.SURVIVAL)||player.getGameMode().equals(GameMode.ADVENTURE))){
+                        if (!player.getName().equals(thrower.getName()) && ( thrower.getScoreboard().getEntityTeam(thrower) == null || (thrower.getScoreboard().getEntityTeam(thrower) != null && !thrower.getScoreboard().getEntityTeam(thrower).getEntries().contains(player.getScoreboardEntryName())) ) && snowball.getLocation().distance(player.getLocation()) < config.getInt("SpectralArrowScan.Distance") && (player.getGameMode().equals(GameMode.SURVIVAL)||player.getGameMode().equals(GameMode.ADVENTURE))){
                             numberOfPeople++;
                             player.sendMessage("検知された!");
                             player.playSound(player,Sound.BLOCK_SCULK_SENSOR_CLICKING,1,1);
+                            if(config.getBoolean("SpectralArrowScan.Glow")){
+                                player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING,1,0,false,false,true));
+                            }
                         }
                     }
                     thrower.sendMessage("敵を"+numberOfPeople+"人検知");
@@ -252,8 +329,16 @@ public class Listener implements org.bukkit.event.Listener {
                 Creeper creeper = (Creeper)event.getEntity();
                 creeper.removePotionEffect(PotionEffectType.SPEED);
                 creeper.removePotionEffect(PotionEffectType.SLOW);
-                event.getLocation().getWorld().createExplosion(event.getLocation(),0F,false);
+                boolean b = creeper.getScoreboardTags().contains("canDestroy");
+                event.getLocation().getWorld().createExplosion(event.getLocation(),2F,false,(config.getBoolean("CreepersGrenadeFire") && creeper.getScoreboardTags().contains("canDestroy")));
                 event.getLocation().getWorld().spawnParticle(Particle.EXPLOSION_HUGE,event.getLocation(),10);
+                event.getEntity().remove();
+                break;
+            }
+            case FIREBALL:{
+                event.setCancelled(true);
+                event.getLocation().getWorld().createExplosion(event.getLocation(),0F,false,false);
+                event.getLocation().getWorld().spawnParticle(Particle.EXPLOSION_NORMAL,event.getLocation(),10);
                 event.getEntity().remove();
                 break;
             }
@@ -263,8 +348,10 @@ public class Listener implements org.bukkit.event.Listener {
     @EventHandler
     public void InventoryCloseEvent(InventoryCloseEvent event){
 
-        if(event.getView().getTitle().equals("モバイルスミッシングテーブル")){
-            event.getInventory().getItem(0).setAmount(event.getInventory().getItem(0).getAmount() - 1);
+        if(event.getView().getTitle().equals("モバイルスミッシングテーブル")) {
+            if (event.getInventory().getItem(0) != null) {
+                event.getInventory().getItem(0).setAmount(event.getInventory().getItem(0).getAmount() - 1);
+            }
         }
     }
 

@@ -1,2 +1,8 @@
 SNOWBALL:
   SLOT: 17
+
+CreepersGrenadeFire: true
+
+SpectralArrowScan:
+  Distance: 15
+  Glow: false

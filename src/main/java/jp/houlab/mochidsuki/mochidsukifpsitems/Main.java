@@ -9,21 +9,15 @@ import com.comphenix.protocol.events.PacketEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+
 /**
  * メインクラス
  */
@@ -78,5 +72,35 @@ class V{
 
     static public HashMap<Projectile, PotionType> SnowBallEffect = new HashMap<>();
 
-    static public HashMap<Entity, Player> Owner = new HashMap<>();
+    static private Map<Entity, Player> Owner = new LinkedHashMap<>();
+    static private Map<Player, List<Entity>> Entities = new HashMap<>();
+
+    public static void addOwner(Player player,Entity entity){
+        Owner.put(entity, player);
+
+        List<Entity> entities = getOwnerEntities(player);
+        if(entities == null){
+            entities =  new ArrayList<>();
+            Entities.put(player, entities);
+        }
+        entities.add(entity);
+    }
+
+    public static void removeEntity(Entity entity){
+        entity.remove();
+        getOwnerEntities(Owner.get(entity)).remove(entity);
+        Owner.remove(entity);
+    }
+
+    public static Player getOwner(Entity entity){
+        return Owner.get(entity);
+    }
+
+    public static Set<Entity> getEntities(){
+        return Owner.keySet();
+    }
+
+    public static List<Entity> getOwnerEntities(Player player){
+        return Entities.get(player);
+    }
 }
